@@ -17,6 +17,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::onOpenRTPTool()
 {
-    RTPToolDialog* dialog = new RTPToolDialog();
+    RTPToolDialog* dialog = new RTPToolDialog(this);
     dialog->show();
 }
