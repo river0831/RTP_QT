@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+<qresource>
+    <file>./RTP.jpg</file>
+    <file>./ntu_logo.jpg</file>
+</qresource>
+</RCC>
