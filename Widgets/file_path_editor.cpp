@@ -2,7 +2,9 @@
 
 #include <QDebug>
 
-FilePathEditor::FilePathEditor(QString name, QWidget *parent) : QWidget(parent)
+FilePathEditor::FilePathEditor(QString name, QWidget *parent) :
+    QWidget(parent),
+    mode_(PathMode::OPEN_FILE)
 {
     QHBoxLayout* h_layout = new QHBoxLayout(this);
 
@@ -28,9 +30,28 @@ void FilePathEditor::setFilePath(QString path)
         path_editor_->setText(path);
 }
 
+void FilePathEditor::setMode(PathMode mode)
+{
+    mode_ = mode;
+}
+
 void FilePathEditor::onBrowse()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, "Open file");
-    if (!file_name.isEmpty())
-        path_editor_->setText(file_name);
+    QString path_name;
+    switch (mode_) {
+    case OPEN_FILE:
+        path_name = QFileDialog::getOpenFileName(this, "Open file");
+        break;
+    case OPEN_DIRECTORY:
+        path_name = QFileDialog::getExistingDirectory(this, "Open directory");;
+        break;
+    case SAVE_FILE:
+        path_name = QFileDialog::getSaveFileName(this, tr("Save File"));
+        break;
+    default:
+        break;
+    }
+
+    if (!path_name.isEmpty())
+        path_editor_->setText(path_name);
 }
