@@ -512,9 +512,9 @@ bool RTPToolDialog::constructElementsFromXlsx(
     for (int i = 0; i < nb_rows; ++i) {
         Element ele;
         for (int j = 0; j < nb_columns; ++j) {
-            QString attr_name = header[j];
-            QString value = raw_content[i][j];
-            ele.addProperty(attr_name.toStdString(), value.toStdString());
+            //QString attr_name = header[j];
+            //QString value = raw_content[i][j];
+            ele.addProperty(header[j].toStdString(), raw_content[i][j].toStdString());
         }
         content.push_back(ele);
     }

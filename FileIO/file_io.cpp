@@ -42,13 +42,14 @@ bool XlsxIO::read(
     }
 
     // Read each row
-    content.resize(has_header? nb_row - 1 : nb_row);
+    content.reserve(has_header? nb_row - 1 : nb_row);
     for (; i <= nb_row; ++i) {
-        content[i-1].resize(nb_column);
+        vector<QString> line_content(nb_column);
         for (int j = 1; j <= nb_column; ++j) {
             QVariant var = file.read(i, j);
-            content[i-1][j-1] = var.toString();
+            line_content[j-1] = var.toString();
         }
+        content.push_back(line_content);
     }
 
     return true;
