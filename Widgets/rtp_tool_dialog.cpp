@@ -275,8 +275,10 @@ void RTPToolDialog::onLoadSettings()
     while(!file.atEnd()) {
         QByteArray line = file.readLine();
         QString str(line);
-        // format of str, e.g., INPUT_FILE=./xx/xxx/xx
-        // Need to split at the '=' mark
+        // format of str, e.g., INPUT_FILE=./xx/xxx/xx\n
+        // Need to split at the '=' mark and remove '\n' at the end
+        str.remove('\r');
+        str.remove('\n');
         QStringList list = str.split("=");
         if (list.size() != 2)
             continue;
