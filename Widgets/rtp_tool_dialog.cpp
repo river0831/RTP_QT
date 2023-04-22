@@ -130,6 +130,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) : QMainWindow(parent)
     layout->addWidget(grp_output_files);
 
     output_file_ = new FilePathEditor("Output");
+    output_file_->setMode(FilePathEditor::PathMode::SAVE_FILE);
     grp_output_files_layout->addWidget(output_file_);
 
     // Export and load configuration buttons
@@ -352,10 +353,12 @@ void RTPToolDialog::onUpdateProgress(int value)
 
 void RTPToolDialog::onRunBtnClicked()
 {
-    qDebug() << "Is runing?" << my_thread_->isRunning();
+    /*
+    //qDebug() << "Is runing?" << my_thread_->isRunning();
     my_thread_->start();
-    qDebug() << "Is runing?" << my_thread_->isRunning();
+    //qDebug() << "Is runing?" << my_thread_->isRunning();
     return;
+    */
 
     // Read input file
     QString input_file_path = input_file_->getFilePath();
