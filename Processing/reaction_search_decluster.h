@@ -239,6 +239,8 @@ private:
     );
 
     void sortByPeakingInfo(vector<Element>& data);
+
+    bool sortDatabseByMass(vector<Element>& database);
 };
 
 #endif // REACTIONSEARCHDECLUSTER_H

@@ -493,6 +493,11 @@ bool ReactionSearchDecluster::combinationMassComparison(
     vector<vector<pair<int, Element>>>& result,
     vector<double>& massAccuracyValues
 ) {
+    // Sort database based on mass for searching performance improvement
+    vector<Element> database_sorted = database;
+    if (sortDatabseByMass(database_sorted))
+        database = database_sorted;
+
     vector<int> max_appearance;
     for (int i = 0; i < database.size(); i++)
     {
@@ -574,6 +579,14 @@ bool ReactionSearchDecluster::combinationMassComparison(
             vector<pair<int, Element>> new_searched = searched;
             if (j != 0)
                 new_searched.push_back(make_pair(j, data[0]));
+
+            // Check for fast searching. If current combination already has a mass greater than del
+            // and the mass accuracy is not met, we don't have to continue further searching as the
+            // input data is sorted so the total mass and mass diff are greater.
+            double curr_mass = ComputeMass(new_searched);
+            if (curr_mass > del && !MassFilter(del, curr_mass, threshold))
+                break;
+
             combinationMassComparison(new_data, new_appearance, new_num, del, threshold, new_searched, result, massAccuracyValues);
         }
         else
@@ -923,4 +936,27 @@ void ReactionSearchDecluster::sortByPeakingInfo(vector<Element>& data)
     {
         assert(data[i + 1].peakParameters.mzmed >= data[i].peakParameters.mzmed);
     }
+}
+
+bool ReactionSearchDecluster::sortDatabseByMass(vector<Element> &database)
+{
+    vector<pair<int, double>> index_mass(database.size());
+    for (int i = 0; i < database.size(); ++i) {
+        index_mass[i].first = i;
+        string mono_mass_change = database[i].getPropertyValue("Monoisotopic Mass Change");
+        if (mono_mass_change.empty())
+            return false;
+        index_mass[i].second = stof(mono_mass_change);
+    }
+
+    sort(index_mass.begin(), index_mass.end(), [](pair<int, double> &left, pair<int, double> &right) {
+        return left.second < right.second;
+    });
+
+    vector<Element> database_sorted(database.size());
+    for (int i = 0; i < index_mass.size(); ++i)
+        database_sorted[i] = database[index_mass[i].first];
+    database.clear();
+    database = database_sorted;
+    return true;
 }

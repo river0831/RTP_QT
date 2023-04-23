@@ -189,7 +189,11 @@ public:
 
     string getPropertyValue(string s)
     {
-        return m_allProperties[s];
+        map<string, string>::iterator iter = m_allProperties.find(s);
+        if (iter == m_allProperties.end())
+            return "";
+        else
+            return iter->second;
     }
 
     void addDetect(Element ele)
