@@ -53,7 +53,6 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     cout << "4 Done!" << endl;
 
     // Step 4.5: Update results to paired data
-
     for (int i = 0; i < pairedData.size(); i++)
     {
         vector<ReactionSearchResult> reactionSearchResults;
@@ -92,7 +91,7 @@ ReactionSearchDecluster::ReactionSearchDecluster(
 
         // Update data to elements;
         pairedData[i].ele1.reactionSearchResults = reactionSearchResults;
-        pairedData[i].ele2.reactionSearchResults = reactionSearchResults;
+        pairedData[i].ele2.reactionSearchResults = reactionSearchResults;        
     }
     cout << "4.5 Done!" << endl;
 
