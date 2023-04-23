@@ -493,6 +493,7 @@ void RTPToolDialog::onRunBtnClicked()
         adduct_list_content
     );
 
+    QMessageBox::information(this, tr("RTP tool"),tr("Process done!") );
 }
 
 bool RTPToolDialog::constructElementsFromXlsx(
