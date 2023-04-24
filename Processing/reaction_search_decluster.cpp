@@ -246,8 +246,8 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     cout << "9 Done!" << endl;
 
     // Save results
-    ReactionSearchDeclusterResult rst_results;
-    rst_results.rt_groups.reserve(finalObjects.size());
+    ReactionSearchDeclusterResult rsd_results;
+    rsd_results.rt_groups.reserve(finalObjects.size());
     for (int i = 0; i < finalObjects.size(); ++i) {
         // finalObjects[i] represents a RententionTimeGroup
         RetentionTimeGroup rtg;
@@ -264,10 +264,10 @@ ReactionSearchDecluster::ReactionSearchDecluster(
             rtg.mass_diff_groups.push_back(mdg);
         }
         rtg.formulas = finalFormulas[i];
-        rst_results.rt_groups.push_back(rtg);
+        rsd_results.rt_groups.push_back(rtg);
     }
 
-    rst_results_ = rst_results;
+    rsd_results_ = rsd_results;
 
     /*
     // Step 10: output data
@@ -317,6 +317,11 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     string path = ".\\output.csv";
     char* outputPath = (char*)(path).data();
     OutputFile(outputPath, dataToOutput);*/
+}
+
+ReactionSearchDecluster::RSDResult ReactionSearchDecluster::getRSDResult()
+{
+    return rsd_results_;
 }
 
 void ReactionSearchDecluster::constructPeakingInfo(vector<Element>& data)

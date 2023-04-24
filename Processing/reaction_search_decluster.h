@@ -158,6 +158,8 @@ public:
         vector<RetentionTimeGroup> rt_groups;
     };
 
+    typedef ReactionSearchDeclusterResult RSDResult;
+
 public:
     ReactionSearchDecluster(
         vector<Element> data,
@@ -169,6 +171,8 @@ public:
         vector<Element> data_negative,
         vector<Element> data_adduct
     );
+
+    RSDResult getRSDResult();
 
 private:
     void constructPeakingInfo(vector<Element>& data);
@@ -260,7 +264,7 @@ private:
     bool sortDatabseByMass(vector<Element>& database);
 
 private:
-    ReactionSearchDeclusterResult rst_results_;
+    ReactionSearchDeclusterResult rsd_results_;
 };
 
 #endif // REACTIONSEARCHDECLUSTER_H
