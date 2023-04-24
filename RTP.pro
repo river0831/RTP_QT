@@ -17,6 +17,7 @@ SOURCES += \
     Widgets/file_path_editor.cpp \
     Widgets/label_value_editor.cpp \
     Widgets/rtp_tool_dialog.cpp \
+    Widgets/table_viewer.cpp \
     main.cpp \
     mainwindow.cpp
 
@@ -28,6 +29,7 @@ HEADERS += \
     Widgets/file_path_editor.h \
     Widgets/label_value_editor.h \
     Widgets/rtp_tool_dialog.h \
+    Widgets/table_viewer.h \
     mainwindow.h
 
 FORMS += \
