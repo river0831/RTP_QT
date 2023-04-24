@@ -44,13 +44,20 @@ struct ReactionSearchResult
     string value;
     double accuracy;
     double sum;
+    vector<pair<int, string>> combination;
 
-    ReactionSearchResult(string Type, string Value, double Accuracy, double Sum)
-    {
+    ReactionSearchResult(
+        string Type,
+        string Value,
+        double Accuracy,
+        double Sum,
+        vector<pair<int, string>> Combination
+    ) {
         type = Type;
         value = Value;
         accuracy = Accuracy;
         sum = Sum;
+        combination = Combination;
     }
 };
 
