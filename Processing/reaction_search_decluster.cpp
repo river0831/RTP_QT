@@ -68,10 +68,13 @@ ReactionSearchDecluster::ReactionSearchDecluster(
                 double sum_of_mass = 0;
                 // Compute the 'value' of a ReactionSearchResult and sum of masses
                 vector<pair<int, Element>> possibility_oneAdduct_k = possibility_oneAdduct[k];
+                vector<pair<int, string>> descriptions(possibility_oneAdduct_k.size());
                 for (int m = 0; m < possibility_oneAdduct_k.size(); m++)
                 {
                     int no = possibility_oneAdduct_k[m].first;
                     string description = possibility_oneAdduct_k[m].second.getPropertyValue("Description");
+                    descriptions[m].first = no;
+                    descriptions[m].second = description;
                     if (m != 0)
                         combination = combination + "+";
                     combination = combination + to_string(no) + "*" + "[" + description + "]";
@@ -84,7 +87,7 @@ ReactionSearchDecluster::ReactionSearchDecluster(
                 // Compute the sum of masses
                 double totalMass = sum_of_mass + reactionSearchParameters.m_prime;
                 // Construct ReactionSearchResult
-                ReactionSearchResult rsr = ReactionSearchResult(type, value, accuracy, totalMass);
+                ReactionSearchResult rsr = ReactionSearchResult(type, value, accuracy, totalMass, descriptions);
                 reactionSearchResults.push_back(rsr);
             }
         }
@@ -241,6 +244,30 @@ ReactionSearchDecluster::ReactionSearchDecluster(
         }
     }
     cout << "9 Done!" << endl;
+
+    // Save results
+    ReactionSearchDeclusterResult rst_results;
+    rst_results.rt_groups.reserve(finalObjects.size());
+    for (int i = 0; i < finalObjects.size(); ++i) {
+        // finalObjects[i] represents a RententionTimeGroup
+        RetentionTimeGroup rtg;
+        rtg.mass_diff_groups.reserve(finalObjects[i].size());
+        for (int j = 0; j < finalObjects[i].size(); ++j) {
+            // finalObjects[i][j] represents a MassDiffGroup
+            MassDiffGroup mdg;
+            mdg.paired_objects.reserve(finalObjects[i][j].size());
+            mdg.rs_results.reserve(finalObjects[i][j].size());
+            for (int k = 0; k < finalObjects[i][j].size(); ++k) {
+                mdg.paired_objects.push_back(finalObjects[i][j][k]);
+                mdg.rs_results.push_back(finalObjects[i][j][k].attributes.ele1.reactionSearchResults);
+            }
+            rtg.mass_diff_groups.push_back(mdg);
+        }
+        rtg.formulas = finalFormulas[i];
+        rst_results.rt_groups.push_back(rtg);
+    }
+
+    rst_results_ = rst_results;
 
     /*
     // Step 10: output data
