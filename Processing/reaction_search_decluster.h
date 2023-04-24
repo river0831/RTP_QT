@@ -120,26 +120,43 @@ public:
     };
 
     struct IsotopePairObjectMassComparator
+    {
+        bool operator() (IsotopePairObject obj1, IsotopePairObject obj2)
         {
-            bool operator() (IsotopePairObject obj1, IsotopePairObject obj2)
+            PairPeakingParameters info1 = obj1.obj.peakParameters;
+            PairPeakingParameters info2 = obj2.obj.peakParameters;
+            if (info1.mzmed < info2.mzmed)
+                return true;
+            else if (info1.mzmed > info2.mzmed)
+                return false;
+            else
             {
-                PairPeakingParameters info1 = obj1.obj.peakParameters;
-                PairPeakingParameters info2 = obj2.obj.peakParameters;
-                if (info1.mzmed < info2.mzmed)
+                if (info1.rtmed < info2.rtmed)
                     return true;
-                else if (info1.mzmed > info2.mzmed)
+                else if (info1.rtmed > info2.rtmed)
                     return false;
                 else
-                {
-                    if (info1.rtmed < info2.rtmed)
-                        return true;
-                    else if (info1.rtmed > info2.rtmed)
-                        return false;
-                    else
-                        return info1.mean1 < info2.mean1;
-                }
+                    return info1.mean1 < info2.mean1;
             }
-        };
+        }
+    };
+
+    struct MassDiffGroup {
+        vector<IsotopePairObject> paired_objects;
+        vector<vector<ReactionSearchResult>> rs_results; // Each vector<ReactionSearchResult> corresponds to an IsotopePairObject
+    };
+
+    struct RetentionTimeGroup {
+        vector<MassDiffGroup> mass_diff_groups;
+
+        // Each vector<string> represents a possible formula.
+        // Each vector<string> has the same size as mass_diff_groups.
+        vector<vector<string>> formulas;
+    };
+
+    struct ReactionSearchDeclusterResult {
+        vector<RetentionTimeGroup> rt_groups;
+    };
 
 public:
     ReactionSearchDecluster(
@@ -241,6 +258,9 @@ private:
     void sortByPeakingInfo(vector<Element>& data);
 
     bool sortDatabseByMass(vector<Element>& database);
+
+private:
+    ReactionSearchDeclusterResult rst_results_;
 };
 
 #endif // REACTIONSEARCHDECLUSTER_H
