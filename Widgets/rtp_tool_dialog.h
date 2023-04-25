@@ -19,6 +19,7 @@
 #include <QThread>
 #include "file_path_editor.h"
 #include "Widgets/label_value_editor.h"
+#include "table_viewer.h"
 
 // File input and ouput
 #include "FileIO/file_io.h"
@@ -80,12 +81,15 @@ signals:
 
 public slots:
     void onRunBtnClicked();
+    void onViewResultBtnClicked();
     void onExportSettings();
     void onLoadSettings();
 
     void onUpdateProgress(int value);
 
 private:
+    QVector<QString> getAttributes(Element ele, const QVector<QString>& attrs);
+
     bool constructElementsFromXlsx(
         const QString& path,
         vector<QString>& header,
@@ -123,11 +127,21 @@ private:
 
     // Buttons
     QPushButton* run_btn_; // Click to run the algorithm
+    QPushButton* view_result_btn_;
 
     // Status bar
     QStatusBar* status_bar_;
     QLabel* status_label_;
     QProgressBar* progress_bar_;
+
+    // The attribute names of the input file (the header line)
+    QVector<QString> input_file_attrs_;
+
+    // RTP processor
+    ReactionSearchDecluster* processsor_;
+
+    // Table viewer for result display
+    TableViewer* result_viewer_;
 
     // Thread
     MyThread* my_thread_;

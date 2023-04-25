@@ -3,7 +3,10 @@
 // Test
 #include <QDebug>
 
-RTPToolDialog::RTPToolDialog(QWidget *parent) : QMainWindow(parent)
+RTPToolDialog::RTPToolDialog(QWidget *parent) :
+    QMainWindow(parent),
+    processsor_(nullptr),
+    result_viewer_(nullptr)
 {
     QVBoxLayout* dialog_layout = new QVBoxLayout();
     QWidget* window = new QWidget();
@@ -142,6 +145,11 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) : QMainWindow(parent)
     btn_grp_layout->addWidget(run_btn_);
     connect(run_btn_, SIGNAL(clicked()), this, SLOT(onRunBtnClicked()));
 
+    // View results button
+    view_result_btn_ = new QPushButton("View Results");
+    btn_grp_layout->addWidget(view_result_btn_);
+    connect(view_result_btn_, SIGNAL(clicked()), this, SLOT(onViewResultBtnClicked()));
+
     QStatusBar* status_bar_ = new QStatusBar();
     this->setStatusBar(status_bar_);
 
@@ -163,6 +171,8 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) : QMainWindow(parent)
 RTPToolDialog::~RTPToolDialog()
 {
     delete my_thread_;
+    if (processsor_ != nullptr)
+        delete processsor_;
 }
 
 void RTPToolDialog::onExportSettings()
@@ -374,6 +384,10 @@ void RTPToolDialog::onRunBtnClicked()
         return;
     }
 
+    // Save the attribute names
+    input_file_attrs_.clear();
+    input_file_attrs_ = QVector<QString>::fromStdVector(input_header);
+
     // Read the database file
     QString database_file_path = database_file_->getFilePath();
     vector<QString> database_header;
@@ -482,7 +496,12 @@ void RTPToolDialog::onRunBtnClicked()
         rs_is_positive, rs_threshold, rs_m_prime, rs_nb_combination
     );
 
-    ReactionSearchDecluster process = ReactionSearchDecluster(
+    if (processsor_ != nullptr) {
+        delete processsor_;
+        processsor_ = nullptr;
+    }
+
+    processsor_ = new ReactionSearchDecluster(
         input_content,
         database_content,
         pp_params,
@@ -493,7 +512,81 @@ void RTPToolDialog::onRunBtnClicked()
         adduct_list_content
     );
 
+    // JJ: need to change it to a status bar message.
     QMessageBox::information(this, tr("RTP tool"),tr("Process done!") );
+}
+
+/*
+ * Slot function for view_result_btn_ "clicked" signal.
+ * This function will pop up a new window with a table to show the reaction search and declustering results.
+ */
+void RTPToolDialog::onViewResultBtnClicked()
+{
+    if (processsor_ == nullptr)
+        return;
+
+    // Prepare table content for display.
+    QVector<QString> attr_to_display = input_file_attrs_;
+    QVector<QVector<QString>> contents;
+    ReactionSearchDecluster::RSDResult result = processsor_->getRSDResult();
+    vector<ReactionSearchDecluster::RetentionTimeGroup> rt_groups = result.rt_groups;
+    for (int i = 0; i < rt_groups.size(); ++i) {
+        vector<ReactionSearchDecluster::MassDiffGroup> mass_diff_groups = rt_groups[i].mass_diff_groups;
+        vector<vector<string>> formulas = rt_groups[i].formulas;
+        for (int j = 0; j < mass_diff_groups.size(); ++j) {
+            // Formula result of current mass diff group
+            QString formula_result;
+            for (int m = 0; m < formulas.size(); ++m) {
+                formula_result += QString("%1 [%2];").arg(QString::number(m+1)).arg(QString::fromStdString(formulas[m][j]));
+            }
+
+            vector<vector<ReactionSearchResult>> rs_results = mass_diff_groups[j].rs_results;
+
+            vector<ReactionSearchDecluster::IsotopePairObject> paired_objects = mass_diff_groups[j].paired_objects;
+            for (int k = 0; k < paired_objects.size(); ++k) {
+                ReactionSearchDecluster::IsotopePairObject paired_obj = paired_objects[k];
+                QVector<QString> ele1_values = getAttributes(paired_obj.attributes.ele1, attr_to_display);
+                QVector<QString> ele2_values = getAttributes(paired_obj.attributes.ele2, attr_to_display);
+
+                QString rs_result;
+                // Reaction search results
+                for (int m = 0; m < rs_results[k].size(); ++m) {
+                    rs_result += QString("%1 [%2, %3, %4]; ").arg(QString::number(m+1)).arg(QString::fromStdString(rs_results[k][m].value)).arg(QString::fromStdString(rs_results[k][m].type)).arg(QString::number(rs_results[k][m].accuracy));
+                }
+
+                ele1_values.push_back(formula_result);
+                ele1_values.push_back(rs_result);
+
+                ele2_values.push_back(formula_result);
+                ele2_values.push_back(rs_result);
+
+                contents.push_back(ele1_values);
+                contents.push_back(ele2_values);
+            }
+        }
+    }
+
+    // Prepare reaction search results
+    attr_to_display.push_back("Formulas");
+    attr_to_display.push_back("Reaction search results");
+    if (result_viewer_ != nullptr) {
+        result_viewer_->close();
+        result_viewer_->updateTable(attr_to_display, contents);
+    } else {
+        result_viewer_ = new TableViewer(attr_to_display, contents);
+    }
+    result_viewer_->show();
+}
+
+/*
+ * Get the values of the input attributes (attrs) of the input Element (ele).
+ */
+QVector<QString> RTPToolDialog::getAttributes(Element ele, const QVector<QString>& attrs)
+{
+    QVector<QString> values(attrs.size(), QString());
+    for (int i = 0; i < attrs.size(); ++i)
+        values[i] = QString::fromStdString(ele.getPropertyValue(attrs[i].toStdString()));
+    return values;
 }
 
 bool RTPToolDialog::constructElementsFromXlsx(
