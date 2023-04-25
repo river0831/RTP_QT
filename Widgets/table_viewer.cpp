@@ -47,6 +47,7 @@ bool TableViewer::updateTable(
         QCheckBox* cb = new QCheckBox(header[i]);
         cb->setChecked(true);
         list_->setItemWidget(item, cb);
+        connect(cb, SIGNAL(toggled(bool)), this, SLOT(onVisibilityChanged()));
     }
 
     table_->setRowCount(content.size());
@@ -68,6 +69,35 @@ bool TableViewer::updateTable(
     table_->show();
 }
 
+void TableViewer::getListAttributes(QVector<QString>& attrs, QVector<bool>& check_status)
+{
+    if (list_ == nullptr)
+        return;
+    attrs.resize(list_->count());
+    check_status.resize(list_->count());
+    for (int i = 0; i < list_->count(); ++i) {
+        QListWidgetItem* lw = list_->item(i);
+        QCheckBox* cb = dynamic_cast<QCheckBox*>(list_->itemWidget(lw));
+        attrs[i] = cb->text();
+        check_status[i] = cb->isChecked();
+    }
+}
+
+void TableViewer::updateColumnVisibility(const QVector<bool>& vis)
+{
+    if (table_->columnCount() != vis.size())
+        return;
+    table_->hide();
+    for (int i = 0; i < vis.size(); ++i) {
+        if (vis[i])
+            table_->showColumn(i);
+        else
+            table_->hideColumn(i);
+    }
+    table_->show();
+}
+
+
 /*
     Reset the list and table: clear the list and reset the table to
     10 rows and 2 columns.
@@ -84,4 +114,15 @@ void TableViewer::reset()
             table_->item(i, j)->setText("");
         }
     }
+}
+
+/*
+ * When user toggles the visiblity of attributes in the list, this function is called to update the table.
+ */
+void TableViewer::onVisibilityChanged()
+{
+    QVector<QString> attrs;
+    QVector<bool> check_status;
+    getListAttributes(attrs, check_status);
+    updateColumnVisibility(check_status);
 }

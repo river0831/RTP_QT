@@ -28,7 +28,14 @@ public slots:
         const QVector<QVector<QString>>& content // Content to display
     );
 
+    void getListAttributes(QVector<QString>& attrs, QVector<bool>& check_status);
+
+    void updateColumnVisibility(const QVector<bool>& vis);
+
     void reset();
+
+private slots:
+    void onVisibilityChanged();
 
 private:
     QTableWidget* table_;
