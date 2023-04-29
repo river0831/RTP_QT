@@ -14,6 +14,7 @@ SOURCES += \
     DataModel/element.cpp \
     FileIO/file_io.cpp \
     Processing/reaction_search_decluster.cpp \
+    Widgets/checkbox_list.cpp \
     Widgets/file_path_editor.cpp \
     Widgets/label_value_editor.cpp \
     Widgets/rtp_tool_dialog.cpp \
@@ -26,6 +27,7 @@ HEADERS += \
     DataModel/element.h \
     FileIO/file_io.h \
     Processing/reaction_search_decluster.h \
+    Widgets/checkbox_list.h \
     Widgets/file_path_editor.h \
     Widgets/label_value_editor.h \
     Widgets/rtp_tool_dialog.h \
