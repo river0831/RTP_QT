@@ -7,6 +7,7 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <QSplitter>
+#include <QMainWindow>
 #include "checkbox_list.h"
 
 class TableViewer : public QWidget
@@ -14,12 +15,6 @@ class TableViewer : public QWidget
     Q_OBJECT
 public:
     explicit TableViewer(QWidget *parent = nullptr);
-
-    TableViewer(
-        const QVector<QString>& header, // Defines the header of a table
-        const QVector<QVector<QString>>& content, // Content to display
-        QWidget* parent = nullptr
-    );
 
 signals:
 
@@ -41,6 +36,22 @@ private slots:
 private:
     QTableWidget* table_;
     CheckboxList* attr_list_;
+};
+
+class TableViewerDialog : public QMainWindow
+{
+    Q_OBJECT
+public:
+    TableViewerDialog(QWidget* parent = nullptr);
+
+    bool updateTable(
+        const QVector<QString>& header, // Defines the header of a table
+        const QVector<QVector<QString>>& content // Content to display
+    );
+
+private:
+    TableViewer* table_viewer_;
+    QMenuBar* menu_bar_;
 };
 
 #endif // TABLEVIEWER_H

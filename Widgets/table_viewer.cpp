@@ -1,17 +1,12 @@
 #include "table_viewer.h"
+#include <QMenuBar>
 
+/*
+ *      class: TableViewer
+ *  This class creates a widget with a table and a list of the headers.
+ */
 // Constructors
 TableViewer::TableViewer(QWidget *parent) : QWidget(parent)
-{
-
-}
-
-// Constructors
-TableViewer::TableViewer(
-    const QVector<QString> &header,
-    const QVector<QVector<QString>> &content,
-    QWidget *parent
-) : QWidget(parent)
 {
     QHBoxLayout* layout = new QHBoxLayout(this);
 
@@ -27,7 +22,7 @@ TableViewer::TableViewer(
 
     layout->addWidget(splitter);
 
-    updateTable(header, content);
+    reset();
 
     connect(attr_list_, SIGNAL(selectionChanged()), this, SLOT(onAttrSelectionChanged()));
 }
@@ -95,14 +90,14 @@ void TableViewer::reset()
 {
     int def_nb_rows = 10;
     int def_nb_cols = 2;
-    attr_list_->clear();
-    table_->setRowCount(def_nb_rows);
-    table_->setColumnCount(def_nb_cols);
-    for (int i = 0; i < table_->rowCount(); ++i) {
-        for (int j = 0; j < table_->columnCount(); ++j) {
-            table_->item(i, j)->setText("");
-        }
+    QVector<QString> header(def_nb_cols, "");
+    QVector<QVector<QString>> content;
+    content.reserve(def_nb_rows);
+    for (int i = 0; i < def_nb_rows; ++i) {
+        QVector<QString> tmp(def_nb_cols, "");
+        content.push_back(tmp);
     }
+    updateTable(header, content);
 }
 
 /*
@@ -115,4 +110,38 @@ void TableViewer::onAttrSelectionChanged()
     QVector<bool> check_status;
     attr_list_->getItemCheckState(check_status);
     updateColumnVisibility(check_status);
+}
+
+
+/*
+ *      class: TableViewerDialog
+ *  This class has a TableViewer widget and menus for other operations.
+ */
+TableViewerDialog::TableViewerDialog(QWidget* parent)
+    : QMainWindow(parent)
+{
+    QVBoxLayout* dialog_layout = new QVBoxLayout();
+    QWidget* window = new QWidget();
+    window->setLayout(dialog_layout);
+    setCentralWidget(window);
+
+    table_viewer_ = new TableViewer(this);
+    dialog_layout->addWidget(table_viewer_);
+
+    // Set up menu bar
+    menu_bar_ = new QMenuBar(this);
+    this->setMenuBar(menu_bar_);
+    menuBar()->setNativeMenuBar(false); // Need this line, otherwise the menu bar not showning
+
+    QMenu* menu_file = new QMenu("File");
+    menu_bar_->addMenu(menu_file);
+    QAction* action_export = new QAction("Export...");
+    menu_file->addAction(action_export);
+}
+
+bool TableViewerDialog::updateTable(
+    const QVector<QString>& header,
+    const QVector<QVector<QString>>& content
+) {
+    table_viewer_->updateTable(header, content);
 }

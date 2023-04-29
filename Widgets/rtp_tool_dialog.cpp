@@ -585,7 +585,8 @@ void RTPToolDialog::onViewResultBtnClicked()
         result_viewer_->close();
         result_viewer_->updateTable(attr_to_display, contents);
     } else {
-        result_viewer_ = new TableViewer(attr_to_display, contents);
+        result_viewer_ = new TableViewerDialog(this);
+        result_viewer_->updateTable(attr_to_display, contents);
     }
     result_viewer_->show();
 }

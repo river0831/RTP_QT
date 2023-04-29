@@ -142,7 +142,7 @@ private:
     ReactionSearchDecluster* processsor_;
 
     // Table viewer for result display
-    TableViewer* result_viewer_;
+    TableViewerDialog* result_viewer_;
 
     // Thread
     MyThread* my_thread_;
