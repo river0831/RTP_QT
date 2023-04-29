@@ -4,6 +4,10 @@
 #include "../DataModel/element.h"
 #include "../DataModel/abstract_object.h"
 
+#include <thread>
+#include <mutex>
+#include <QThread>
+
 class StructureInfo
 {
 public:
@@ -169,7 +173,8 @@ public:
         double adduct_massAccuracy,
         vector<Element> data_positive,
         vector<Element> data_negative,
-        vector<Element> data_adduct
+        vector<Element> data_adduct,
+        int num_threads = 1
     );
 
     RSDResult getRSDResult();
@@ -188,8 +193,21 @@ private:
         vector<pair<string, double>>& negative
     );
 
+    /* Original reaction database search using single thread.*/
     void reactionDatabaseSearch(
         vector<IsotopePair> groups,
+        vector<Element> database,
+        ReactionSearchParameters reactionSearchParameters,
+        vector<pair<string, double>> adductList,
+        vector<vector<vector<vector<pair<int, Element>>>>>& hits,
+        vector<vector<vector<double>>>& accuracyValues,
+        int num_threads = 1
+    );
+
+    /* This function is designed to boost the performance using multiple threads.*/
+    static void reactionDatabaseSearch_mt(
+        vector<IsotopePair>& all_groups,
+        int start, int end,
         vector<Element> database,
         ReactionSearchParameters reactionSearchParameters,
         vector<pair<string, double>> adductList,
@@ -197,7 +215,9 @@ private:
         vector<vector<vector<double>>>& accuracyValues
     );
 
-    bool combinationMassComparison(
+    static void increase(int index, int times, int& count);
+
+    static bool combinationMassComparison(
         vector<Element> database,
         int maxNumElements,
         double mo,
@@ -208,7 +228,7 @@ private:
         vector<double>& massAccuracyValues
     );
 
-    bool combinationMassComparison(
+    static bool combinationMassComparison(
         vector<Element> data,
         vector<int> max_appearance,
         int num,
@@ -219,11 +239,11 @@ private:
         vector<double>& massAccuracyValues
     );
 
-    bool MassFilter(double observed, double theoratical, double threshold);
+    static bool MassFilter(double observed, double theoratical, double threshold);
 
-    double ComputeMass(vector<pair<int, Element>> combination);
+    static double ComputeMass(vector<pair<int, Element>> combination);
 
-    double ComputeMassAccuracy(double observed, double theoratical);
+    static double ComputeMassAccuracy(double observed, double theoratical);
 
     void retentionTimeBasedGrouping(
         vector<IsotopePair> data,
@@ -261,7 +281,7 @@ private:
 
     void sortByPeakingInfo(vector<Element>& data);
 
-    bool sortDatabseByMass(vector<Element>& database);
+    static bool sortDatabseByMass(vector<Element>& database);
 
 private:
     ReactionSearchDeclusterResult rsd_results_;

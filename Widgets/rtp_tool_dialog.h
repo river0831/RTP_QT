@@ -16,6 +16,7 @@
 #include <QToolBar>
 #include <QMenuBar>
 #include <QMainWindow>
+#include <QComboBox>
 #include <QThread>
 #include "file_path_editor.h"
 #include "Widgets/label_value_editor.h"
@@ -122,8 +123,8 @@ private:
     // Adduct declustering parameter
     LabelValueEditor* ad_mass_accuracy_;
 
-    // Configurations and output
-    FilePathEditor* output_file_;
+    // Computation settings
+    QComboBox* num_threads_select_;
 
     // Buttons
     QPushButton* run_btn_; // Click to run the algorithm

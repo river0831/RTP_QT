@@ -2,6 +2,10 @@
 
 // Test
 #include <QDebug>
+#include <mutex>
+#include <thread>
+
+using namespace std;
 
 RTPToolDialog::RTPToolDialog(QWidget *parent) :
     QMainWindow(parent),
@@ -126,15 +130,20 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
     grp_ad_settings_layout->addWidget(ad_mass_accuracy_);
     grp_ad_settings_layout->addStretch();
 
-    // Configuration files and output file
-    QGroupBox* grp_output_files = new QGroupBox("Save/Load settings and output");
-    QVBoxLayout* grp_output_files_layout = new QVBoxLayout(grp_output_files);
+    // Computation settings
+    QGroupBox* grp_compute_settings = new QGroupBox("Computation settings");
+    QVBoxLayout* grp_compute_settings_layout = new QVBoxLayout(grp_compute_settings);
+    layout->addWidget(grp_compute_settings);
 
-    layout->addWidget(grp_output_files);
-
-    output_file_ = new FilePathEditor("Output");
-    output_file_->setMode(FilePathEditor::PathMode::SAVE_FILE);
-    grp_output_files_layout->addWidget(output_file_);
+    QHBoxLayout* num_threads_layout = new QHBoxLayout();
+    num_threads_layout->addWidget(new QLabel("Number of threads"));
+    num_threads_select_ = new QComboBox(this);
+    QStringList num_thread_items;
+    num_thread_items << "1" << "2" << "4" << "6" << "8" << "10";
+    num_threads_select_->addItems(num_thread_items);
+    num_threads_select_->setCurrentIndex(0);
+    num_threads_layout->addWidget(num_threads_select_);
+    grp_compute_settings_layout->addLayout(num_threads_layout);
 
     // Export and load configuration buttons
     QHBoxLayout* btn_grp_layout = new QHBoxLayout();
@@ -501,6 +510,8 @@ void RTPToolDialog::onRunBtnClicked()
         processsor_ = nullptr;
     }
 
+    int num_threads = num_threads_select_->currentText().toInt();
+
     processsor_ = new ReactionSearchDecluster(
         input_content,
         database_content,
@@ -509,7 +520,8 @@ void RTPToolDialog::onRunBtnClicked()
         adduct_mass_accuracy,
         pos_content,
         neg_content,
-        adduct_list_content
+        adduct_list_content,
+        num_threads
     );
 
     // JJ: need to change it to a status bar message.

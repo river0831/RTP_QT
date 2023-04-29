@@ -1,6 +1,14 @@
 #include "reaction_search_decluster.h"
 #include <iostream>
+
+// Test
+#include <QDebug>
+
+
+
 using namespace std;
+
+mutex mtx;
 
 ReactionSearchDecluster::ReactionSearchDecluster(
     vector<Element> data,
@@ -10,7 +18,8 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     double adduct_massAccuracy,
     vector<Element> data_positive,
     vector<Element> data_negative,
-    vector<Element> data_adduct
+    vector<Element> data_adduct,
+    int num_threads
 ) {
     /**************Reaction search**********************/
     // Step 0: Construct peaking info for input data.
@@ -49,7 +58,7 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     cout << reactionSearchParameters.m_prime << " ";
     cout << reactionSearchParameters.numCombination << " ";
     cout << reactionSearchParameters.threshold << " " << endl;
-    reactionDatabaseSearch(pairedData, database, reactionSearchParameters, adductList, results, massAccuracyValues);
+    reactionDatabaseSearch(pairedData, database, reactionSearchParameters, adductList, results, massAccuracyValues, num_threads);
     cout << "4 Done!" << endl;
 
     // Step 4.5: Update results to paired data
@@ -459,6 +468,47 @@ void ReactionSearchDecluster::reactionDatabaseSearch(
     ReactionSearchParameters reactionSearchParameters,
     vector<pair<string, double>> adductList,
     vector<vector<vector<vector<pair<int, Element>>>>>& hits,
+    vector<vector<vector<double>>>& accuracyValues,
+    int num_threads
+) { 
+    /*Need do searching for each adduct in adductList.*/
+    int no_jobs_per_thread = groups.size() / num_threads;
+    if (groups.size() % num_threads != 0)
+        ++no_jobs_per_thread;
+
+    // Temporary data storage
+    vector<vector<vector<vector<vector<pair<int, Element>>>>>> hits_tmp(num_threads);
+    vector<vector<vector<vector<double>>>> accuracyValues_tmp(num_threads);
+
+    vector<std::thread> threads;
+    for (int i = 0; i < num_threads; ++i) {
+        int start = i * no_jobs_per_thread;
+        int end = start + no_jobs_per_thread - 1 < groups.size() ? start + no_jobs_per_thread - 1 : groups.size() - 1;
+
+        threads.push_back(std::thread(
+            reactionDatabaseSearch_mt, std::ref(groups), start, end, database, reactionSearchParameters,
+            adductList, std::ref(hits_tmp[i]), std::ref(accuracyValues_tmp[i])
+        ));
+    }
+
+    for (int i = 0; i < num_threads; ++i) {
+        threads[i].join();
+    }
+
+    // Copy data
+    for (int i = 0; i < num_threads; ++i) {
+        hits.insert(hits.end(), hits_tmp[i].begin(), hits_tmp[i].end());
+        accuracyValues.insert(accuracyValues.end(), accuracyValues_tmp[i].begin(), accuracyValues_tmp[i].end());
+    }
+}
+
+void ReactionSearchDecluster::reactionDatabaseSearch_mt(
+    vector<IsotopePair>& all_groups,
+    int start, int end,
+    vector<Element> database,
+    ReactionSearchParameters reactionSearchParameters,
+    vector<pair<string, double>> adductList,
+    vector<vector<vector<vector<pair<int, Element>>>>>& hits,
     vector<vector<vector<double>>>& accuracyValues
 ) {
     /* m_prime is an user-input variable.
@@ -467,6 +517,11 @@ void ReactionSearchDecluster::reactionDatabaseSearch(
     isPositive == false: del = mo + 1.007825 - m_prime.
     Then, search for possible combinations based on del.*/
 
+    mtx.lock();
+    vector<IsotopePair> groups;
+    groups.insert(groups.end(), all_groups.begin() + start, all_groups.begin() + end + 1);
+    mtx.unlock();
+
     bool isPositive = reactionSearchParameters.isPositive;
     double m_prime = reactionSearchParameters.m_prime;
     double threshold = reactionSearchParameters.threshold;
@@ -474,6 +529,9 @@ void ReactionSearchDecluster::reactionDatabaseSearch(
 
     /*Need do searching for each adduct in adductList.*/
     cout << "Total no. of groups: " << groups.size() << endl;
+
+    vector<vector<vector<vector<pair<int, Element>>>>> hits_tmp;
+    vector<vector<vector<double>>> accuracyValues_tmp;
     for (int i = 0; i < groups.size(); i++)
     {
         cout << "Now processing Group ID: " << i << endl;
@@ -494,24 +552,23 @@ void ReactionSearchDecluster::reactionDatabaseSearch(
             else
                 del = mo + adductMass - m_prime;
 
-            // Compute combinations
-            vector<vector<pair<int, Element>>> combinations;
-            int maxNumElements = num_combination;
-            //FindCombinations(database, maxNumElements, mo, m_prime, combinations);
-
-
-
             // Compare with possible combinations
             vector<vector<pair<int, Element>>> result;
             vector<double> massAccuracyValues;
+            int maxNumElements = num_combination;
             combinationMassComparison(database, maxNumElements, mo, m_prime, del, threshold, result, massAccuracyValues);
 
             results.push_back(result);
             values.push_back(massAccuracyValues);
         }
-        hits.push_back(results);
-        accuracyValues.push_back(values);
+        hits_tmp.push_back(results);
+        accuracyValues_tmp.push_back(values);
     }
+
+    mtx.lock();
+    hits = hits_tmp;
+    accuracyValues = accuracyValues_tmp;
+    mtx.unlock();
 }
 
 bool ReactionSearchDecluster::combinationMassComparison(
