@@ -17,10 +17,9 @@ TableViewer::TableViewer(
 
     QSplitter* splitter = new QSplitter(Qt::Horizontal);
 
-    // List all the headers in list_
-    list_ = new QListWidget(this);
-    list_->setWindowTitle("Attributes");
-    splitter->addWidget(list_);
+    // List all the headers in attr_list_
+    attr_list_ = new CheckboxList("Attributes", this);
+    splitter->addWidget(attr_list_);
 
     // Initialize the table and fill in the contents
     table_ = new QTableWidget(this);
@@ -29,6 +28,8 @@ TableViewer::TableViewer(
     layout->addWidget(splitter);
 
     updateTable(header, content);
+
+    connect(attr_list_, SIGNAL(selectionChanged()), this, SLOT(onAttrSelectionChanged()));
 }
 
 /*
@@ -39,16 +40,10 @@ bool TableViewer::updateTable(
     const QVector<QVector<QString>>& content // Content to display
 ) {
     table_->hide();
+    attr_list_->clear();
 
-    list_->clear();
-    for (int i = 0; i < header.size(); ++i) {
-        QListWidgetItem* item = new QListWidgetItem();
-        list_->addItem(item);
-        QCheckBox* cb = new QCheckBox(header[i]);
-        cb->setChecked(true);
-        list_->setItemWidget(item, cb);
-        connect(cb, SIGNAL(toggled(bool)), this, SLOT(onVisibilityChanged()));
-    }
+    QVector<bool> check_state(header.size(), true);
+    attr_list_->updateCheckboxes(header, check_state);
 
     table_->setRowCount(content.size());
     table_->setColumnCount(header.size());
@@ -71,16 +66,10 @@ bool TableViewer::updateTable(
 
 void TableViewer::getListAttributes(QVector<QString>& attrs, QVector<bool>& check_status)
 {
-    if (list_ == nullptr)
+    if (attr_list_ == nullptr)
         return;
-    attrs.resize(list_->count());
-    check_status.resize(list_->count());
-    for (int i = 0; i < list_->count(); ++i) {
-        QListWidgetItem* lw = list_->item(i);
-        QCheckBox* cb = dynamic_cast<QCheckBox*>(list_->itemWidget(lw));
-        attrs[i] = cb->text();
-        check_status[i] = cb->isChecked();
-    }
+    attr_list_->getItemNames(attrs);
+    attr_list_->getItemCheckState(check_status);
 }
 
 void TableViewer::updateColumnVisibility(const QVector<bool>& vis)
@@ -106,7 +95,7 @@ void TableViewer::reset()
 {
     int def_nb_rows = 10;
     int def_nb_cols = 2;
-    list_->clear();
+    attr_list_->clear();
     table_->setRowCount(def_nb_rows);
     table_->setColumnCount(def_nb_cols);
     for (int i = 0; i < table_->rowCount(); ++i) {
@@ -119,10 +108,11 @@ void TableViewer::reset()
 /*
  * When user toggles the visiblity of attributes in the list, this function is called to update the table.
  */
-void TableViewer::onVisibilityChanged()
+void TableViewer::onAttrSelectionChanged()
 {
-    QVector<QString> attrs;
+    if (attr_list_ == nullptr)
+        return;
     QVector<bool> check_status;
-    getListAttributes(attrs, check_status);
+    attr_list_->getItemCheckState(check_status);
     updateColumnVisibility(check_status);
 }

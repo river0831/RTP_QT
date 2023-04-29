@@ -7,6 +7,7 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <QSplitter>
+#include "checkbox_list.h"
 
 class TableViewer : public QWidget
 {
@@ -35,11 +36,11 @@ public slots:
     void reset();
 
 private slots:
-    void onVisibilityChanged();
+    void onAttrSelectionChanged();
 
 private:
     QTableWidget* table_;
-    QListWidget* list_;
+    CheckboxList* attr_list_;
 };
 
 #endif // TABLEVIEWER_H
