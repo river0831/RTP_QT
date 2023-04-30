@@ -162,6 +162,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
     view_result_btn_ = new QPushButton("View Results");
     btn_grp_layout->addWidget(view_result_btn_);
     connect(view_result_btn_, SIGNAL(clicked()), this, SLOT(onViewResultBtnClicked()));
+    view_result_btn_->setEnabled(false);
 
     QStatusBar* status_bar_ = new QStatusBar();
     this->setStatusBar(status_bar_);
@@ -516,6 +517,9 @@ void RTPToolDialog::onRunBtnClicked()
 
     int num_threads = num_threads_select_->currentText().toInt();
 
+    if (processsor_ != nullptr)
+        delete processsor_;
+
     processsor_ = new ReactionSearchDecluster(
         input_content,
         database_content,
@@ -527,6 +531,15 @@ void RTPToolDialog::onRunBtnClicked()
         adduct_list_content,
         num_threads
     );
+
+    if (processsor_ != nullptr) {
+        if (processsor_->success())
+            view_result_btn_->setEnabled(true);
+        else {
+            delete processsor_;
+            processsor_ = nullptr;
+        }
+    }
 
     // JJ: need to change it to a status bar message.
     QMessageBox::information(this, tr("RTP tool"),tr("Process done!") );

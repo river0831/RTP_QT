@@ -21,6 +21,8 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     vector<Element> data_adduct,
     int num_threads
 ) {
+    success_ = false;
+
     /**************Reaction search**********************/
     // Step 0: Construct peaking info for input data.
     constructPeakingInfo(data);
@@ -277,55 +279,7 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     }
 
     rsd_results_ = rsd_results;
-
-    /*
-    // Step 10: output data
-    vector<string> dataToOutput;
-    vector<string> attributeNames;
-    attributeNames.push_back("featureidx");
-    attributeNames.push_back("mzmed");
-    attributeNames.push_back("rtmed");
-    attributeNames.push_back("formula");
-    attributeNames.push_back("GroupID");
-    attributeNames.push_back("PairID");
-    attributeNames.push_back("Ratio");
-    attributeNames.push_back("Reaction Search Result");
-
-    string titleLine;
-    for (int i = 0; i < attributeNames.size(); i++)
-    {
-        titleLine = titleLine + attributeNames[i] + ",";
-    }
-
-    dataToOutput.push_back(titleLine);
-    for (int i = 0; i < finalObjects.size(); i++)
-    {
-        for (int j = 0; j < finalObjects[i].size(); j++)
-        {
-            for (int k = 0; k < finalObjects[i][j].size(); k++)
-            {
-                Element ele1 = finalObjects[i][j][k].attributes.ele1;
-                Element ele2 = finalObjects[i][j][k].attributes.ele2;
-                string line1 = "";
-                string line2 = "";
-                for (int m = 0; m < attributeNames.size(); m++)
-                {
-                    line1 = line1 + ele1.getPropertyValue(attributeNames[m]) + ",";
-                    line2 = line2 + ele2.getPropertyValue(attributeNames[m]) + ",";
-                }
-                dataToOutput.push_back(line1);
-                dataToOutput.push_back(line2);
-                dataToOutput.push_back("");
-            }
-        }
-        dataToOutput.push_back("");
-        dataToOutput.push_back("");
-        dataToOutput.push_back("");
-    }
-
-    string path = ".\\output.csv";
-    char* outputPath = (char*)(path).data();
-    OutputFile(outputPath, dataToOutput);*/
+    success_ = true;
 }
 
 ReactionSearchDecluster::RSDResult ReactionSearchDecluster::getRSDResult()

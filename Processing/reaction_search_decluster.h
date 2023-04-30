@@ -179,6 +179,8 @@ public:
 
     RSDResult getRSDResult();
 
+    bool success() { return success_; }
+
 private:
     void constructPeakingInfo(vector<Element>& data);
 
@@ -285,6 +287,7 @@ private:
 
 private:
     ReactionSearchDeclusterResult rsd_results_;
+    bool success_;
 };
 
 #endif // REACTIONSEARCHDECLUSTER_H
