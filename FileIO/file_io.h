@@ -28,7 +28,13 @@ public:
     );
 
     bool write(
+        const vector<QString>& header,
+        const vector<vector<QString>>& content
+    );
 
+    bool write(
+        const QVector<QString>& header,
+        const QVector<QVector<QString>>& content
     );
 };
 

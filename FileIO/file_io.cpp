@@ -55,13 +55,39 @@ bool XlsxIO::read(
     return true;
 }
 
-bool XlsxIO::write() {
-    /*
+bool XlsxIO::write(
+    const vector<QString>& header,
+    const vector<vector<QString>>& content
+) {
     QXlsx::Document xlsx;
-    xlsx.write(1, 1, "Hell, this is A1");
-    xlsx.write(1, 3, "This is A2");
-    xlsx.write(1, 4, 222);
-    xlsx.write(2, 1, 123);
-    QString out_path = QString();
-    xlsx.saveAs(out_path);*/
+
+    // Writer header
+    int row = 1;
+    if (header.size() != 0) {
+        for (int i = 0; i < header.size(); ++i) {
+            xlsx.write(row, i + 1, header[i].toStdString().c_str());
+        }
+    }
+
+    // Write content
+    ++row;
+    for (int i = 0; i < content.size(); ++i) {
+        for (int j = 0; j < content[i].size(); ++j) {
+            xlsx.write(row, j + 1, content[i][j].toStdString().c_str());
+        }
+        ++row;
+    }
+
+    xlsx.saveAs(file_name_);
+}
+
+bool XlsxIO::write(
+    const QVector<QString>& header,
+    const QVector<QVector<QString>>& content
+) {
+    vector<QString> header_tmp = header.toStdVector();
+    vector<vector<QString>> content_tmp(content.size());
+    for (int i = 0; i < content.size(); ++i)
+        content_tmp[i] = content[i].toStdVector();
+    return write(header_tmp, content_tmp);
 }
