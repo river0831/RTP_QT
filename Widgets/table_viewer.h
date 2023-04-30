@@ -24,6 +24,13 @@ public slots:
         const QVector<QVector<QString>>& content // Content to display
     );
 
+    bool getTableContent(
+        QVector<QString>* headers,
+        QVector<QVector<QString>>* rows,
+        QVector<int>* hidden_cols,
+        QVector<int>* hidden_rows
+    );
+
     void getListAttributes(QVector<QString>& attrs, QVector<bool>& check_status);
 
     void updateColumnVisibility(const QVector<bool>& vis);
@@ -48,6 +55,18 @@ public:
         const QVector<QString>& header, // Defines the header of a table
         const QVector<QVector<QString>>& content // Content to display
     );
+
+    bool getTableContent(
+        QVector<QString>* headers,
+        QVector<QVector<QString>>* rows,
+        QVector<int>* hidden_cols,
+        QVector<int>* hidden_rows
+    );
+
+    QString getFilePath(QString extension);
+
+public slots:
+    void exportTableAsXlsx();
 
 private:
     TableViewer* table_viewer_;

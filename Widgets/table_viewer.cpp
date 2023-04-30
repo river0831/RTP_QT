@@ -1,5 +1,8 @@
 #include "table_viewer.h"
 #include <QMenuBar>
+#include <QFileDialog>
+#include <QMessageBox>
+#include "FileIO/file_io.h"
 
 /*
  *      class: TableViewer
@@ -39,6 +42,9 @@ bool TableViewer::updateTable(
     const QVector<QString>& header, // Defines the header of a table
     const QVector<QVector<QString>>& content // Content to display
 ) {
+    if (table_ == nullptr || attr_list_ == nullptr)
+        return false;
+
     table_->hide();
     attr_list_->clear();
 
@@ -62,6 +68,49 @@ bool TableViewer::updateTable(
     }
 
     table_->show();
+    return true;
+}
+
+bool TableViewer::getTableContent(
+    QVector<QString>* headers,
+    QVector<QVector<QString>>* rows,
+    QVector<int>* hidden_cols,
+    QVector<int>* hidden_rows
+){
+    if (table_ == nullptr)
+        return false;
+    int nb_cols = table_->columnCount();
+    int nb_rows = table_->rowCount();
+    QVector<QString> hdrs(nb_cols);
+    QVector<QVector<QString>> table_content(nb_rows);
+    QVector<int> hidden_cols_idx;
+    QVector<int> hidden_row_idx;
+    for (int i = 0; i < nb_cols; ++i) {
+        if (table_->isColumnHidden(i))
+            hidden_cols_idx.push_back(i);
+        QString str = table_->horizontalHeaderItem(i)->text();
+        hdrs[i] = str;
+    }
+
+    for (int i = 0; i < nb_rows; ++i) {
+        if (table_->isRowHidden(i))
+            hidden_row_idx.push_back(i);
+        table_content[i].resize(nb_cols);
+        for (int j = 0; j < nb_cols; ++j) {
+            table_content[i][j] = table_->item(i, j)->text();
+        }
+    }
+
+    if (headers != nullptr)
+        *headers = hdrs;
+    if (rows != nullptr)
+        *rows = table_content;
+    if (hidden_cols != nullptr)
+        *hidden_cols = hidden_cols_idx;
+    if (hidden_rows != nullptr)
+        *hidden_rows = hidden_row_idx;
+
+    return true;
 }
 
 void TableViewer::getListAttributes(QVector<QString>& attrs, QVector<bool>& check_status)
@@ -143,11 +192,83 @@ TableViewerDialog::TableViewerDialog(QWidget* parent)
     menu_bar_->addMenu(menu_file);
     QAction* action_export = new QAction("Export...");
     menu_file->addAction(action_export);
+
+    connect(action_export, SIGNAL(triggered(bool)), this, SLOT(exportTableAsXlsx()));
 }
 
 bool TableViewerDialog::updateTable(
     const QVector<QString>& header,
     const QVector<QVector<QString>>& content
 ) {
-    table_viewer_->updateTable(header, content);
+    return table_viewer_->updateTable(header, content);
+}
+
+bool TableViewerDialog::getTableContent(
+    QVector<QString>* headers,
+    QVector<QVector<QString>>* rows,
+    QVector<int>* hidden_cols,
+    QVector<int>* hidden_rows
+) {
+    return table_viewer_->getTableContent(headers, rows, hidden_cols, hidden_rows);
+}
+
+/**
+ * @brief TableViewerDialog::getFilePath
+ *
+ * Let user choose a file path with the provided format extension.
+ */
+QString TableViewerDialog::getFilePath(QString extension)
+{
+    QString filter = QString("Excel spreadsheet (*.%1)").arg(extension);
+    QString path = QFileDialog::getSaveFileName(
+        this, tr("Save as"), "", filter, &filter
+    );
+    return path;
+}
+
+/**
+ * @brief TableViewerDialog::exportTableAsXlsx
+ *
+ * Export the table as an xlsx file.
+ */
+void TableViewerDialog::exportTableAsXlsx()
+{
+    bool export_hidden_cols = false;
+    bool export_hidden_rows = false;
+    QString path = getFilePath("xlsx");
+    QVector<QString> header;
+    QVector<QVector<QString>> content;
+    QVector<int> hidden_cols;
+    QVector<int> hidden_rows;
+    bool info_get = getTableContent(
+        &header, &content, &hidden_cols, &hidden_rows
+    );
+    if (!info_get) {
+        QMessageBox::warning(this, "File Export", "The table content is unavailable.");
+        return;
+    }
+
+    if (!export_hidden_rows) {
+        // Remove hidden rows
+        for (int i = hidden_rows.size() - 1; i >= 0; --i) {
+            content.erase(content.begin() + hidden_rows[i]);
+        }
+    }
+
+    if (!export_hidden_cols) {
+        // Remove columns from the table content
+        for (int i = 0; i < content.size(); ++i) {
+            for (int j = hidden_cols.size() - 1; j >= 0; --j) {
+                content[i].erase(content[i].begin() + hidden_cols[j]);
+            }
+        }
+
+        // Remove headers
+        for (int j = hidden_cols.size() - 1; j >= 0; --j) {
+            header.erase(header.begin() + hidden_cols[j]);
+        }
+    }
+
+    XlsxIO writer(path);
+    writer.write(header, content);
 }
