@@ -364,11 +364,7 @@ void RTPToolDialog::onLoadSettings()
         }
     }
 
-    QMessageBox::information(
-        this,
-        tr("Configuration Import"),
-        tr("Configurations imported successfully!")
-    );
+    setStatusMessage("Configurations imported successfully!");
     return;
 }
 
@@ -645,6 +641,11 @@ bool RTPToolDialog::constructElementsFromXlsx(
         content.push_back(ele);
     }
     return true;
+}
+
+void RTPToolDialog::setStatusMessage(QString msg)
+{
+    status_label_->setText(msg);
 }
 
 

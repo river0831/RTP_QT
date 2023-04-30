@@ -97,6 +97,8 @@ private:
         vector<Element>& content
     );
 
+    void setStatusMessage(QString msg);
+
     // Menu bar
     QMenuBar* menu_bar_;
 
