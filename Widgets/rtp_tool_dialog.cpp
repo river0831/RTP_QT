@@ -52,6 +52,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
 
     QVBoxLayout* grp_files_layout = new QVBoxLayout();
     grp_files->setLayout(grp_files_layout);
+    grp_files_layout->setMargin(0);
 
     input_file_ = new FilePathEditor("Input");
     grp_files_layout->addWidget(input_file_);
@@ -100,6 +101,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
     // Pair peaking settings
     QGroupBox* grp_pair_peaking_params = new QGroupBox("Pair peaking settings");
     QHBoxLayout* grp_pair_peaking_params_layout = new QHBoxLayout(grp_pair_peaking_params);
+    grp_pair_peaking_params_layout->setMargin(0);
 
     layout->addWidget(grp_pair_peaking_params);
 
@@ -122,6 +124,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
     // Adduct declustering parameter
     QGroupBox* grp_ad_settings = new QGroupBox("Adduct declustering settings");
     QHBoxLayout* grp_ad_settings_layout = new QHBoxLayout(grp_ad_settings);
+    grp_ad_settings_layout->setMargin(0);
 
     layout->addWidget(grp_ad_settings);
 
@@ -144,6 +147,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
     num_threads_select_->setCurrentIndex(0);
     num_threads_layout->addWidget(num_threads_select_);
     grp_compute_settings_layout->addLayout(num_threads_layout);
+    num_threads_layout->addStretch();
 
     // Export and load configuration buttons
     QHBoxLayout* btn_grp_layout = new QHBoxLayout();

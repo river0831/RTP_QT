@@ -13,8 +13,13 @@ TableViewer::TableViewer(QWidget *parent) : QWidget(parent)
     QSplitter* splitter = new QSplitter(Qt::Horizontal);
 
     // List all the headers in attr_list_
-    attr_list_ = new CheckboxList("Attributes", this);
-    splitter->addWidget(attr_list_);
+    QWidget* attr_list_widget = new QWidget();
+    QHBoxLayout* attr_list_layout = new QHBoxLayout();
+    attr_list_widget->setLayout(attr_list_layout);
+    attr_list_layout->setMargin(0);
+    attr_list_ = new CheckboxList("Attributes");
+    attr_list_layout->addWidget(attr_list_);
+    splitter->addWidget(attr_list_widget);
 
     // Initialize the table and fill in the contents
     table_ = new QTableWidget(this);
@@ -121,6 +126,7 @@ TableViewerDialog::TableViewerDialog(QWidget* parent)
     : QMainWindow(parent)
 {
     QVBoxLayout* dialog_layout = new QVBoxLayout();
+    dialog_layout->setMargin(0);
     QWidget* window = new QWidget();
     window->setLayout(dialog_layout);
     setCentralWidget(window);
