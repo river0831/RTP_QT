@@ -6,7 +6,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
+    this->setWindowTitle("Reactive Compound Transformation");
     connect(ui->rtp_tool_btn_, SIGNAL(clicked()), this, SLOT(onOpenRTPTool()));
 }
 
