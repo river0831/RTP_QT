@@ -30,7 +30,7 @@
 #include "DataModel/element.h"
 #include "Processing/reaction_search_decluster.h"
 
-class MyThread;
+class RTPRunner;
 
 class RTPToolDialog : public QMainWindow
 {
@@ -87,6 +87,10 @@ public slots:
     void onLoadSettings();
 
     void onUpdateProgress(int value);
+
+private slots:
+    void onProcessStart();
+    void onProcessFinished();
 
 private:
     QVector<QString> getAttributes(Element ele, const QVector<QString>& attrs);
@@ -147,23 +151,53 @@ private:
     TableViewerDialog* result_viewer_;
 
     // Thread
-    MyThread* my_thread_;
+    RTPRunner* rtp_runner_;
 };
 
-class MyThread : public QThread
+class RTPRunner : public QThread
 {
     Q_OBJECT
 public:
-    MyThread(RTPToolDialog* creator, QObject* parent = nullptr);
+    RTPRunner(QObject* parent = nullptr);
+    ~RTPRunner();
 
-    void startWork();
+    void setData(
+        const vector<Element>& input,
+        const vector<Element>& database,
+        const vector<Element>& positive,
+        const vector<Element>& negative,
+        const vector<Element>& adduct_list,
+        const float& adduct_mass_accuracy,
+        const PairPeakingParameters& pp_params,
+        const ReactionSearchParameters& rs_params,
+        const int& nb_threads
+    );
+
+    ReactionSearchDecluster* takeoverProcecssor();
+
     void run();
 
 signals:
     void progress(int value);
+    void processStart();
+    void processFinished();
 
 private:
-    RTPToolDialog* rtp_dialog_;
+    void startProcess();
+
+    // Save the RTP processor after finishing the process.
+    ReactionSearchDecluster* processor_;
+
+    // Data used for the process
+    vector<Element> input_;
+    vector<Element> database_;
+    vector<Element> positive_;
+    vector<Element> negative_;
+    vector<Element> adduct_list_;
+    float adduct_mass_accuracy_;
+    PairPeakingParameters pp_params_;
+    ReactionSearchParameters rs_params_;
+    int nb_threads_;
 };
 
 #endif // RTP_TOOL_DIALOG_H

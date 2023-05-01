@@ -178,13 +178,15 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
 
     scroll_area->setWidget(scroll_area_widget_content);
 
-    my_thread_ = new MyThread(this);
-    connect(my_thread_, &MyThread::progress, this, &RTPToolDialog::onUpdateProgress);
+    rtp_runner_ = new RTPRunner(this);
+    connect(rtp_runner_, &RTPRunner::progress, this, &RTPToolDialog::onUpdateProgress);
+    connect(rtp_runner_, &RTPRunner::processStart, this, &RTPToolDialog::onProcessStart);
+    connect(rtp_runner_, &RTPRunner::processFinished, this, &RTPToolDialog::onProcessFinished);
 }
 
 RTPToolDialog::~RTPToolDialog()
 {
-    delete my_thread_;
+    delete rtp_runner_;
     if (processsor_ != nullptr)
         delete processsor_;
 }
@@ -373,15 +375,29 @@ void RTPToolDialog::onUpdateProgress(int value)
     progress_bar_->setValue(value);
 }
 
+void RTPToolDialog::onProcessStart()
+{
+    run_btn_->setEnabled(false);
+    view_result_btn_->setEnabled(false);
+}
+
+void RTPToolDialog::onProcessFinished()
+{
+    if (processsor_ != nullptr)
+        delete processsor_;
+    processsor_ = rtp_runner_->takeoverProcecssor();
+    run_btn_->setEnabled(true);
+    if (processsor_ == nullptr || !processsor_->success()) {
+        view_result_btn_->setEnabled(false);
+        setStatusMessage("RTP process unsuccessful.");
+    } else {
+        view_result_btn_->setEnabled(true);
+        setStatusMessage("RTP process successful.");
+    }
+}
+
 void RTPToolDialog::onRunBtnClicked()
 {
-    /*
-    //qDebug() << "Is runing?" << my_thread_->isRunning();
-    my_thread_->start();
-    //qDebug() << "Is runing?" << my_thread_->isRunning();
-    return;
-    */
-
     // Read input file
     QString input_file_path = input_file_->getFilePath();
     vector<QString> input_header;
@@ -516,29 +532,46 @@ void RTPToolDialog::onRunBtnClicked()
     if (processsor_ != nullptr)
         delete processsor_;
 
-    processsor_ = new ReactionSearchDecluster(
-        input_content,
-        database_content,
-        pp_params,
-        rs_params,
-        adduct_mass_accuracy,
-        pos_content,
-        neg_content,
-        adduct_list_content,
-        num_threads
-    );
+    bool block_ui = false;
 
-    if (processsor_ != nullptr) {
-        if (processsor_->success())
-            view_result_btn_->setEnabled(true);
-        else {
-            delete processsor_;
-            processsor_ = nullptr;
+    if (block_ui) {
+        processsor_ = new ReactionSearchDecluster(
+            input_content,
+            database_content,
+            pp_params,
+            rs_params,
+            adduct_mass_accuracy,
+            pos_content,
+            neg_content,
+            adduct_list_content,
+            num_threads
+        );
+
+        if (processsor_ != nullptr) {
+            if (processsor_->success())
+                view_result_btn_->setEnabled(true);
+            else {
+                delete processsor_;
+                processsor_ = nullptr;
+            }
         }
-    }
 
-    // JJ: need to change it to a status bar message.
-    QMessageBox::information(this, tr("RTP tool"),tr("Process done!") );
+        QMessageBox::information(this, tr("RTP tool"),tr("Process done!") );
+    } else {
+        rtp_runner_->setData(
+            input_content,
+            database_content,
+            pos_content,
+            neg_content,
+            adduct_list_content,
+            adduct_mass_accuracy,
+            pp_params,
+            rs_params,
+            num_threads
+        );
+
+        rtp_runner_->start();
+    }
 }
 
 /*
@@ -648,26 +681,94 @@ void RTPToolDialog::setStatusMessage(QString msg)
     status_label_->setText(msg);
 }
 
+/*
+    class: RTPRunner
+
+    This class is to run the reaction data search and declustering in a new thread,
+    which doesn't block the main dialog of RTPToolDialog.
+
+    It takes the
+
+*/
+RTPRunner::RTPRunner(QObject *parent) :
+    QThread(parent),
+    processor_(nullptr)
+{
+
+}
+
+RTPRunner::~RTPRunner()
+{
+    if (processor_ != nullptr)
+        delete processor_;
+}
+
+void RTPRunner::setData(
+    const vector<Element>& input,
+    const vector<Element>& database,
+    const vector<Element>& positive,
+    const vector<Element>& negative,
+    const vector<Element>& adduct_list,
+    const float& adduct_mass_accuracy,
+    const PairPeakingParameters& pp_params,
+    const ReactionSearchParameters& rs_params,
+    const int& nb_threads
+) {
+    input_ = input;
+    database_ = database;
+    positive_ = positive;
+    negative_ = negative;
+    adduct_list_ = adduct_list;
+    adduct_mass_accuracy_ = adduct_mass_accuracy;
+    pp_params_ = pp_params;
+    rs_params_ = rs_params;
+    nb_threads_ = nb_threads;
+}
 
 /*
-    Class: MyThread
+ * RTPRunner::takeoverProcecssor()
+ *
+ * This function returns the processor and defaults the
+ * processor_ to nullptr. This is to avoid further maintenance
+ * issue. Only takeover.
 */
-MyThread::MyThread(RTPToolDialog *creator, QObject *parent) : QThread(parent)
+ReactionSearchDecluster* RTPRunner::takeoverProcecssor()
 {
-    rtp_dialog_ = creator;
+    ReactionSearchDecluster* processor = processor_;
+    processor_ = nullptr;
+    return processor;
 }
 
-void MyThread::startWork()
+void RTPRunner::run()
 {
-    for (int i = 1; i <= 10; ++i) {
-        QThread::sleep(2);
-        emit progress(10 * i);
+    startProcess();
+}
+
+void RTPRunner::startProcess()
+{
+    if (processor_ != nullptr) {
+        delete processor_;
+        processor_ = nullptr;
     }
 
-    emit progress(100);
-}
+    emit processStart();
 
-void MyThread::run()
-{
-    startWork();
+    processor_ = new ReactionSearchDecluster(
+        input_,
+        database_,
+        pp_params_,
+        rs_params_,
+        adduct_mass_accuracy_,
+        positive_,
+        negative_,
+        adduct_list_,
+        nb_threads_
+    );
+
+    if (!processor_->success()) {
+        delete processor_;
+        processor_ = nullptr;
+    }
+
+    emit processFinished();
 }

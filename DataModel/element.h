@@ -29,8 +29,12 @@ struct ReactionSearchParameters
     double m_prime;
     int numCombination;
 
-    ReactionSearchParameters(bool v_positive, double v_threshold, double v_m_prime, int v_numCombination)
-    {
+    ReactionSearchParameters(
+        bool v_positive = true,
+        double v_threshold = 0,
+        double v_m_prime = 0,
+        int v_numCombination = 1
+    ) {
         isPositive = v_positive;
         threshold = v_threshold;
         m_prime = v_m_prime;
