@@ -266,7 +266,8 @@ void RTPToolDialog::onExportSettings()
         line += "\n";
         file.write(line.toUtf8());
     }
-    QMessageBox::information(this, tr("Configuration Export"),tr("Configuration exported successfully!"));
+
+    setStatusMessage("Configurations exported successfully!");
 }
 
 void RTPToolDialog::onLoadSettings()
@@ -555,8 +556,7 @@ void RTPToolDialog::onRunBtnClicked()
                 processsor_ = nullptr;
             }
         }
-
-        QMessageBox::information(this, tr("RTP tool"),tr("Process done!") );
+        setStatusMessage("RTP process successful.");
     } else {
         rtp_runner_->setData(
             input_content,
