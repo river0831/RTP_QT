@@ -9,7 +9,7 @@ using namespace std;
 
 RTPToolDialog::RTPToolDialog(QWidget *parent) :
     QMainWindow(parent),
-    processsor_(nullptr),
+    processor_(nullptr),
     result_viewer_(nullptr)
 {
     QVBoxLayout* dialog_layout = new QVBoxLayout();
@@ -179,7 +179,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
     scroll_area->setWidget(scroll_area_widget_content);
 
     rtp_runner_ = new RTPRunner(this);
-    connect(rtp_runner_, &RTPRunner::progress, this, &RTPToolDialog::onUpdateProgress);
+    //connect(rtp_runner_, &RTPRunner::progress, this, &RTPToolDialog::onUpdateProgress);
     connect(rtp_runner_, &RTPRunner::processStart, this, &RTPToolDialog::onProcessStart);
     connect(rtp_runner_, &RTPRunner::processFinished, this, &RTPToolDialog::onProcessFinished);
 }
@@ -187,8 +187,8 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
 RTPToolDialog::~RTPToolDialog()
 {
     delete rtp_runner_;
-    if (processsor_ != nullptr)
-        delete processsor_;
+    if (processor_ != nullptr)
+        delete processor_;
 }
 
 void RTPToolDialog::onExportSettings()
@@ -371,8 +371,9 @@ void RTPToolDialog::onLoadSettings()
     return;
 }
 
-void RTPToolDialog::onUpdateProgress(int value)
+void RTPToolDialog::onUpdateProgress(QString msg, int value)
 {
+    status_label_->setText(msg);
     progress_bar_->setValue(value);
 }
 
@@ -384,11 +385,12 @@ void RTPToolDialog::onProcessStart()
 
 void RTPToolDialog::onProcessFinished()
 {
-    if (processsor_ != nullptr)
-        delete processsor_;
-    processsor_ = rtp_runner_->takeoverProcecssor();
+    if (processor_ != nullptr)
+        delete processor_;
+    processor_ = rtp_runner_->takeoverProcecssor();
     run_btn_->setEnabled(true);
-    if (processsor_ == nullptr || !processsor_->success()) {
+    status_label_->setText("0");
+    if (processor_ == nullptr || !processor_->success()) {
         view_result_btn_->setEnabled(false);
         setStatusMessage("RTP process unsuccessful.");
     } else {
@@ -523,20 +525,21 @@ void RTPToolDialog::onRunBtnClicked()
         rs_is_positive, rs_threshold, rs_m_prime, rs_nb_combination
     );
 
-    if (processsor_ != nullptr) {
-        delete processsor_;
-        processsor_ = nullptr;
+    if (processor_ != nullptr) {
+        delete processor_;
+        processor_ = nullptr;
     }
 
     int num_threads = num_threads_select_->currentText().toInt();
 
-    if (processsor_ != nullptr)
-        delete processsor_;
+    if (processor_ != nullptr)
+        delete processor_;
 
     bool block_ui = false;
 
     if (block_ui) {
-        processsor_ = new ReactionSearchDecluster(
+        processor_ = new ReactionSearchDecluster();
+        processor_->runProcess(
             input_content,
             database_content,
             pp_params,
@@ -548,14 +551,13 @@ void RTPToolDialog::onRunBtnClicked()
             num_threads
         );
 
-        if (processsor_ != nullptr) {
-            if (processsor_->success())
-                view_result_btn_->setEnabled(true);
-            else {
-                delete processsor_;
-                processsor_ = nullptr;
-            }
+        if (processor_->success())
+            view_result_btn_->setEnabled(true);
+        else {
+            delete processor_;
+            processor_ = nullptr;
         }
+
         setStatusMessage("RTP process successful.");
     } else {
         rtp_runner_->setData(
@@ -580,13 +582,13 @@ void RTPToolDialog::onRunBtnClicked()
  */
 void RTPToolDialog::onViewResultBtnClicked()
 {
-    if (processsor_ == nullptr)
+    if (processor_ == nullptr)
         return;
 
     // Prepare table content for display.
     QVector<QString> attr_to_display = input_file_attrs_;
     QVector<QVector<QString>> contents;
-    ReactionSearchDecluster::RSDResult result = processsor_->getRSDResult();
+    ReactionSearchDecluster::RSDResult result = processor_->getRSDResult();
     vector<ReactionSearchDecluster::RetentionTimeGroup> rt_groups = result.rt_groups;
     for (int i = 0; i < rt_groups.size(); ++i) {
         vector<ReactionSearchDecluster::MassDiffGroup> mass_diff_groups = rt_groups[i].mass_diff_groups;
@@ -690,8 +692,9 @@ void RTPToolDialog::setStatusMessage(QString msg)
     It takes the
 
 */
-RTPRunner::RTPRunner(QObject *parent) :
+RTPRunner::RTPRunner(RTPToolDialog* rtp_dialog, QObject *parent) :
     QThread(parent),
+    rtp_dialog_(rtp_dialog),
     processor_(nullptr)
 {
 
@@ -753,7 +756,11 @@ void RTPRunner::startProcess()
 
     emit processStart();
 
-    processor_ = new ReactionSearchDecluster(
+    processor_ = new ReactionSearchDecluster();
+
+    connect(processor_, &ReactionSearchDecluster::updateProgress, rtp_dialog_, &RTPToolDialog::onUpdateProgress);
+
+    processor_->runProcess(
         input_,
         database_,
         pp_params_,
@@ -764,6 +771,8 @@ void RTPRunner::startProcess()
         adduct_list_,
         nb_threads_
     );
+
+    disconnect(processor_, &ReactionSearchDecluster::updateProgress, rtp_dialog_, &RTPToolDialog::onUpdateProgress);
 
     if (!processor_->success()) {
         delete processor_;

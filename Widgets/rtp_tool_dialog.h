@@ -86,7 +86,7 @@ public slots:
     void onExportSettings();
     void onLoadSettings();
 
-    void onUpdateProgress(int value);
+    void onUpdateProgress(QString msg, int value);
 
 private slots:
     void onProcessStart();
@@ -145,7 +145,7 @@ private:
     QVector<QString> input_file_attrs_;
 
     // RTP processor
-    ReactionSearchDecluster* processsor_;
+    ReactionSearchDecluster* processor_;
 
     // Table viewer for result display
     TableViewerDialog* result_viewer_;
@@ -158,7 +158,7 @@ class RTPRunner : public QThread
 {
     Q_OBJECT
 public:
-    RTPRunner(QObject* parent = nullptr);
+    RTPRunner(RTPToolDialog* rtp_dialog, QObject* parent = nullptr);
     ~RTPRunner();
 
     void setData(
@@ -184,6 +184,9 @@ signals:
 
 private:
     void startProcess();
+
+    // RTP dialog where an instance of this runner is created
+    RTPToolDialog* rtp_dialog_;
 
     // Save the RTP processor after finishing the process.
     ReactionSearchDecluster* processor_;

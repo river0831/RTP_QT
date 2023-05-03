@@ -1,5 +1,12 @@
 #include "reaction_search_decluster.h"
 #include <iostream>
+#include <chrono>
+#include <thread>
+#include <mutex>
+
+#include <future>
+#include <functional>
+#include <ctime>
 
 // Test
 #include <QDebug>
@@ -10,7 +17,13 @@ using namespace std;
 
 mutex mtx;
 
-ReactionSearchDecluster::ReactionSearchDecluster(
+/* Constructor */
+ReactionSearchDecluster::ReactionSearchDecluster(QObject* parent) : QObject(parent)
+{
+    success_ = false;
+}
+
+void ReactionSearchDecluster::runProcess(
     vector<Element> data,
     const vector<Element>& database,
     PairPeakingParameters pairPeakingParameters,
@@ -22,6 +35,7 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     int num_threads
 ) {
     success_ = false;
+    rsd_results_.rt_groups.clear();
 
     /**************Reaction search**********************/
     // Step 0: Construct peaking info for input data.
@@ -37,7 +51,6 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     vector<pair<string, double>> adductList_negative;
     constructAdductList(adductList_positive, adductList_negative);
     vector<pair<string, double>> adductList = reactionSearchParameters.isPositive ? adductList_positive : adductList_negative;
-    cout << "2 Done!" << endl;
 
     // Step 3: Sort pairs
     vector<IsotopePairObject> pairedObjects;
@@ -51,17 +64,11 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     pairedData.clear();
     for (int i = 0; i < pairedObjects.size(); i++)
         pairedData.push_back(pairedObjects[i].attributes);
-    cout << "3 Done!" << endl;
 
     // Step 4: reaction database search
     vector<vector<vector<vector<pair<int, Element>>>>> results;
     vector<vector<vector<double>>> massAccuracyValues;
-    cout << "Reaction Search Parameters: " << reactionSearchParameters.isPositive << " ";
-    cout << reactionSearchParameters.m_prime << " ";
-    cout << reactionSearchParameters.numCombination << " ";
-    cout << reactionSearchParameters.threshold << " " << endl;
     reactionDatabaseSearch(pairedData, database, reactionSearchParameters, adductList, results, massAccuracyValues, num_threads);
-    cout << "4 Done!" << endl;
 
     // Step 4.5: Update results to paired data
     for (int i = 0; i < pairedData.size(); i++)
@@ -107,7 +114,6 @@ ReactionSearchDecluster::ReactionSearchDecluster(
         pairedData[i].ele1.reactionSearchResults = reactionSearchResults;
         pairedData[i].ele2.reactionSearchResults = reactionSearchResults;        
     }
-    cout << "4.5 Done!" << endl;
 
     // Step 4.6: Compute ratio for each pair
     for (int i = 0; i < pairedData.size(); i++)
@@ -118,14 +124,12 @@ ReactionSearchDecluster::ReactionSearchDecluster(
         pairedData[i].ele1.addProperty("Ratio", to_string(ratio));
         pairedData[i].ele2.addProperty("Ratio", to_string(ratio));
     }
-    cout << "4.6 Done!" << endl;
 
     /**************Declustering**********************/
     // Step 6: Retention time-based grouping.
     vector<vector<IsotopePair>> isotopePairGroups;
     double t_rtmed = 0.06;
     retentionTimeBasedGrouping(pairedData, t_rtmed, isotopePairGroups);
-    cout << "6 Done!" << endl;
 
     // Step 7: Construct 'positive' and 'negative' dictionaries.
     vector<StructureInfo> positive;
@@ -152,7 +156,6 @@ ReactionSearchDecluster::ReactionSearchDecluster(
     }
 
     adductDeclustering(isotopePairGroups, adductList_clustering, positive, negative, reactionSearchParameters.isPositive, adduct_massAccuracy, finalObjects, finalFormulas);
-    cout << "8 Done!" << endl;
 
     // Step 8.5: Add group id and pair id
     for (int i = 0; i < finalObjects.size(); i++)
@@ -176,7 +179,6 @@ ReactionSearchDecluster::ReactionSearchDecluster(
             }
         }
     }
-    cout << "8.5 Done!" << endl;
 
     // Step 8.6: Update reaction search result
     for (int i = 0; i < finalObjects.size(); i++)
@@ -230,7 +232,6 @@ ReactionSearchDecluster::ReactionSearchDecluster(
             }
         }
     }
-    cout << "8.6 Done!" << endl;
 
     // Step 9: Update formula to elements
     for (int i = 0; i < finalObjects.size(); i++)
@@ -254,7 +255,6 @@ ReactionSearchDecluster::ReactionSearchDecluster(
             }
         }
     }
-    cout << "9 Done!" << endl;
 
     // Save results
     ReactionSearchDeclusterResult rsd_results;
@@ -321,16 +321,9 @@ void ReactionSearchDecluster::isotopePairPeaking(
     sortByPeakingInfo(sortedElements);
     vector<IsotopePair> pairs;
 
-    // JJ test: replace with a status bar
     // Output status
-    //cout << "Finding peak pairs." << endl;
-
     for (int i = 0; i < sortedElements.size() - 1; i++)
     {
-        // JJ: need to replace with a progress bar.
-        if (i % 100 == 0)
-            cout << "Current id: " << i << endl;
-
         Element ele = sortedElements[i];
         double Mm = ele.peakParameters.mzmed;
         double Me = Mm + thresholds.massDiff;
@@ -434,6 +427,7 @@ void ReactionSearchDecluster::reactionDatabaseSearch(
     vector<vector<vector<vector<vector<pair<int, Element>>>>>> hits_tmp(num_threads);
     vector<vector<vector<vector<double>>>> accuracyValues_tmp(num_threads);
 
+    /*
     vector<std::thread> threads;
     for (int i = 0; i < num_threads; ++i) {
         int start = i * no_jobs_per_thread;
@@ -447,6 +441,25 @@ void ReactionSearchDecluster::reactionDatabaseSearch(
 
     for (int i = 0; i < num_threads; ++i) {
         threads[i].join();
+    }*/
+
+    vector<progress_t> progress(num_threads);
+    vector<std::future<void>> futures;
+    for (int i = 0; i < num_threads; ++i) {
+        int start = i * no_jobs_per_thread;
+        int end = start + no_jobs_per_thread - 1 < groups.size() ? start + no_jobs_per_thread - 1 : groups.size() - 1;
+        futures.push_back(std::async(reactionDatabaseSearch_mt, std::ref(groups), start, end, database,reactionSearchParameters, adductList, std::ref(hits_tmp[i]), std::ref(accuracyValues_tmp[i]), std::ref(progress[i])));
+    }
+
+    int total_processed = 0;
+    int current_progress = 0; // 0 out of 100
+    while(total_processed != groups.size()) {
+        total_processed = 0;
+        for (int i = 0; i < progress.size(); ++i)
+            total_processed += progress[i].value;
+        current_progress = int(float(total_processed) / float(groups.size()) * 100);
+        emit updateProgress("Reaction database search ...", current_progress); // Emit signal to update progress
+        std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Add sleep to lower the cpu usage.
     }
 
     // Copy data
@@ -463,7 +476,8 @@ void ReactionSearchDecluster::reactionDatabaseSearch_mt(
     ReactionSearchParameters reactionSearchParameters,
     vector<pair<string, double>> adductList,
     vector<vector<vector<vector<pair<int, Element>>>>>& hits,
-    vector<vector<vector<double>>>& accuracyValues
+    vector<vector<vector<double>>>& accuracyValues,
+    progress_t& progress
 ) {
     /* m_prime is an user-input variable.
     For each isotope pair, calculate a mass deviation del according to:
@@ -481,14 +495,11 @@ void ReactionSearchDecluster::reactionDatabaseSearch_mt(
     double threshold = reactionSearchParameters.threshold;
     int num_combination = reactionSearchParameters.numCombination;
 
-    /*Need do searching for each adduct in adductList.*/
-    cout << "Total no. of groups: " << groups.size() << endl;
-
     vector<vector<vector<vector<pair<int, Element>>>>> hits_tmp;
     vector<vector<vector<double>>> accuracyValues_tmp;
     for (int i = 0; i < groups.size(); i++)
     {
-        cout << "Now processing Group ID: " << i << endl;
+        //cout << "Now processing Group ID: " << i << endl;
         IsotopePair group = groups[i];
         double mo = stof(group.ele1.getPropertyValue("mzmed"));
 
@@ -496,7 +507,7 @@ void ReactionSearchDecluster::reactionDatabaseSearch_mt(
         vector<vector<double>> values;
         for (int j = 0; j < adductList.size(); j++)
         {
-            cout << j << "th->" << endl;
+            //cout << j << "th->" << endl;
             string adductName = adductList[j].first;
             double adductMass = adductList[j].second;
 
@@ -517,6 +528,10 @@ void ReactionSearchDecluster::reactionDatabaseSearch_mt(
         }
         hits_tmp.push_back(results);
         accuracyValues_tmp.push_back(values);
+
+        mtx.lock();
+        progress.value = i + 1;
+        mtx.unlock();
     }
 
     mtx.lock();
@@ -556,6 +571,7 @@ bool ReactionSearchDecluster::combinationMassComparison(
         vector<pair<int, Element>> searched;
         combinationMassComparison(database, max_appearance, i, del, threshold, searched, result, massAccuracyValues);
     }
+
     return true;
 }
 

@@ -1,12 +1,11 @@
 #ifndef REACTIONSEARCHDECLUSTER_H
 #define REACTIONSEARCHDECLUSTER_H
 
+#include <QObject>
 #include "../DataModel/element.h"
 #include "../DataModel/abstract_object.h"
-
-#include <thread>
-#include <mutex>
-#include <QThread>
+#include <atomic>
+#include <QString>
 
 class StructureInfo
 {
@@ -86,8 +85,16 @@ struct IsotopePair
     }
 };
 
-class ReactionSearchDecluster
+struct progress_t {
+    std::atomic<int> value;
+    progress_t() {
+        value = 0;
+    }
+};
+
+class ReactionSearchDecluster : public QObject
 {
+    Q_OBJECT
 public:
     typedef AbstractObject<Element, IsotopePair> IsotopePairObject;
 
@@ -165,7 +172,9 @@ public:
     typedef ReactionSearchDeclusterResult RSDResult;
 
 public:
-    ReactionSearchDecluster(
+    ReactionSearchDecluster(QObject* parent = nullptr);
+
+    void runProcess(
         vector<Element> data,
         const vector<Element>& database,
         PairPeakingParameters pairPeakingParameters,
@@ -180,6 +189,9 @@ public:
     RSDResult getRSDResult();
 
     bool success() { return success_; }
+
+signals:
+    void updateProgress(QString msg, int value);
 
 private:
     void constructPeakingInfo(vector<Element>& data);
@@ -214,7 +226,8 @@ private:
         ReactionSearchParameters reactionSearchParameters,
         vector<pair<string, double>> adductList,
         vector<vector<vector<vector<pair<int, Element>>>>>& hits,
-        vector<vector<vector<double>>>& accuracyValues
+        vector<vector<vector<double>>>& accuracyValues,
+        progress_t& progress
     );
 
     static void increase(int index, int times, int& count);
