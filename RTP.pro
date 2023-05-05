@@ -42,6 +42,8 @@ RESOURCES = \
 
 ICON = Images/logo.icns
 
+RC_ICONS = Images/logo.ico
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
