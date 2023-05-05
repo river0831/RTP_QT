@@ -40,9 +40,9 @@ FORMS += \
 RESOURCES = \
     Images/settings.qrc
 
-ICON = Images/logo.icns
+ICON = Images/logo2.icns
 
-RC_ICONS = Images/logo.ico
+RC_ICONS = Images/logo2.ico
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -5,5 +5,8 @@
         <file>logo.ico</file>
         <file>logo.png</file>
         <file>logo.icns</file>
+        <file>logo2.icns</file>
+        <file>logo2.ico</file>
+        <file>logo2.png</file>
     </qresource>
 </RCC>
