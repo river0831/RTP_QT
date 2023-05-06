@@ -1,6 +1,10 @@
 # **RTP**: Reactive Compound Transformation Profiler
 This is an interactive tool of the RTP paper. This tool is programmed in C++ and the interface is desgined with QT Creator 5.0.2. The following of this article will introduce how to use this tool.
 
+## Original paper
+
+Liu, M., Jiang, J., Zheng, J., Huan, T., Gao, B., Fei, X., ... & Fang, M. (2021). RTP: one effective platform to probe reactive compound transformation products and its applications for a reactive plasticizer BADGE. *Environmental Science & Technology*, 55(23), 16034-16043.
+
 ## How to launch this application?
 Our application is available on both Windows and MacOS. Of course, you can download the source codes and build your own version on other platforms like Linux. Later we will explain how to build the source codes.
 
@@ -90,7 +94,3 @@ Please feel free to fork, make changes and build new versions. If you have any e
 ## Acknowledgement
 - Used QXlsx project for excel spreedsheet reading and writing. (Under MIT license)
 - Qt (Under LGPL v3 license or Commercial license. https://www.qt.io/)
-
-## Original paper
-
-Liu, M., Jiang, J., Zheng, J., Huan, T., Gao, B., Fei, X., ... & Fang, M. (2021). RTP: one effective platform to probe reactive compound transformation products and its applications for a reactive plasticizer BADGE. *Environmental Science & Technology*, 55(23), 16034-16043.
