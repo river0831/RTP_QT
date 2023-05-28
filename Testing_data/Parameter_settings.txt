@@ -1,0 +1,19 @@
+Parameters for the testing data:
+
+(1) Reaction search settings:
+positive: Yes
+Threshold: 10
+m’: 340.16746
+No. of combinations: 5
+
+(2) Pair peaking settings:
+Mass difference: 6.037
+Pair peaking mass accuracy: 10
+Pair peaking retention time: 0.06
+Pair peaking mean: 1.25
+
+(3) Adduct declustering settings
+Adduct mass accuracy: 10
+
+(4) Computation settings
+Number of thresholds: 10 (10 is the maximum. You can use a smaller one.)
