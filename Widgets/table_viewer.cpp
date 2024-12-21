@@ -19,7 +19,7 @@ TableViewer::TableViewer(QWidget *parent) : QWidget(parent)
     QWidget* attr_list_widget = new QWidget();
     QHBoxLayout* attr_list_layout = new QHBoxLayout();
     attr_list_widget->setLayout(attr_list_layout);
-    attr_list_layout->setMargin(0);
+    attr_list_layout->setContentsMargins(0, 0, 0, 0);
     attr_list_ = new CheckboxList("Attributes");
     attr_list_layout->addWidget(attr_list_);
     splitter->addWidget(attr_list_widget);
@@ -175,7 +175,7 @@ TableViewerDialog::TableViewerDialog(QWidget* parent)
     : QMainWindow(parent)
 {
     QVBoxLayout* dialog_layout = new QVBoxLayout();
-    dialog_layout->setMargin(0);
+    dialog_layout->setContentsMargins(0, 0, 0, 0);
     QWidget* window = new QWidget();
     window->setLayout(dialog_layout);
     setCentralWidget(window);

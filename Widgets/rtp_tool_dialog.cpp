@@ -33,7 +33,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
     connect(action_import_settings, SIGNAL(triggered(bool)), this, SLOT(onLoadSettings()));
 
     dialog_layout->setSpacing(0);
-    dialog_layout->setMargin(0);
+    dialog_layout->setContentsMargins(0, 0, 0, 0);
 
     QWidget* setting_area = new QWidget();
     QVBoxLayout* setting_area_layout = new QVBoxLayout();
@@ -52,7 +52,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
 
     QVBoxLayout* grp_files_layout = new QVBoxLayout();
     grp_files->setLayout(grp_files_layout);
-    grp_files_layout->setMargin(0);
+    grp_files_layout->setContentsMargins(0, 0, 0, 0);
 
     input_file_ = new FilePathEditor("Input");
     grp_files_layout->addWidget(input_file_);
@@ -101,7 +101,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
     // Pair peaking settings
     QGroupBox* grp_pair_peaking_params = new QGroupBox("Pair peaking settings");
     QHBoxLayout* grp_pair_peaking_params_layout = new QHBoxLayout(grp_pair_peaking_params);
-    grp_pair_peaking_params_layout->setMargin(0);
+    grp_pair_peaking_params_layout->setContentsMargins(0, 0, 0, 0);
 
     layout->addWidget(grp_pair_peaking_params);
 
@@ -124,7 +124,7 @@ RTPToolDialog::RTPToolDialog(QWidget *parent) :
     // Adduct declustering parameter
     QGroupBox* grp_ad_settings = new QGroupBox("Adduct declustering settings");
     QHBoxLayout* grp_ad_settings_layout = new QHBoxLayout(grp_ad_settings);
-    grp_ad_settings_layout->setMargin(0);
+    grp_ad_settings_layout->setContentsMargins(0, 0, 0, 0);
 
     layout->addWidget(grp_ad_settings);
 
@@ -415,7 +415,7 @@ void RTPToolDialog::onRunBtnClicked()
 
     // Save the attribute names
     input_file_attrs_.clear();
-    input_file_attrs_ = QVector<QString>::fromStdVector(input_header);
+    input_file_attrs_ = QVector<QString>(input_header.begin(), input_header.end());
 
     // Read the database file
     QString database_file_path = database_file_->getFilePath();

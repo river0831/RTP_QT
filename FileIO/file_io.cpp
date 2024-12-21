@@ -85,9 +85,10 @@ bool XlsxIO::write(
     const QVector<QString>& header,
     const QVector<QVector<QString>>& content
 ) {
-    vector<QString> header_tmp = header.toStdVector();
+
+    vector<QString> header_tmp(header.begin(), header.end());
     vector<vector<QString>> content_tmp(content.size());
     for (int i = 0; i < content.size(); ++i)
-        content_tmp[i] = content[i].toStdVector();
+      content_tmp[i].insert(content_tmp[i].end(), content[i].begin(), content[i].end());
     return write(header_tmp, content_tmp);
 }

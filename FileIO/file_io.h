@@ -1,10 +1,16 @@
 #ifndef FILEIO_H
 #define FILEIO_H
 
-#include <QString>
-#include <QVector>
-#include "xlsxdocument.h" // xlsx file reading
+#include "xlsxdocument.h"
+#include "xlsxchartsheet.h"
+#include "xlsxcellrange.h"
+#include "xlsxchart.h"
+#include "xlsxrichstring.h"
+#include "xlsxworkbook.h"
 
+#include <QString>
+#include <vector>
+using namespace QXlsx;
 using namespace std;
 
 class FileIO
